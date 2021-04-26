@@ -1,30 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 )
 
-func mOne(next http.Handler) http.Handler {
+func CheckAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("start mOne")
-		next.ServeHTTP(w, r)
-		log.Println("--end mOne")
-	})
-}
-
-func mTwo(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("start mTwo")
-		if r.URL.Path == "/foo" {
-			msg := fmt.Sprint(r.URL.Path, ": so not running next middleWare")
-			log.Println(msg)
-			w.Write([]byte(msg))
+		log.Println("start CheckAuthentication")
+		if r.Header.Get("Client-ID") != "hsjeong" {
+			http.Error(w, "Client not found", http.StatusForbidden)
 			return
 		}
+		if r.Header.Get("Client-Access-ID") != "hsjeong-access" {
+			http.Error(w, "Invalid secret key", http.StatusForbidden)
+			return
+		}
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "Not proper content type", http.StatusForbidden)
+			return
+		}
+
 		next.ServeHTTP(w, r)
-		log.Println("--end mTwo")
+		log.Println("--end CheckAuthentication")
 	})
 }
 
@@ -38,7 +36,7 @@ func main() {
 
 	finalHandler := http.HandlerFunc(final)
 
-	mux.Handle("/", mOne(mTwo(finalHandler)))
+	mux.Handle("/", CheckAuthentication(finalHandler))
 
 	port := "3000"
 	log.Println("listening on: ", port)
