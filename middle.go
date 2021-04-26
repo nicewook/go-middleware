@@ -21,6 +21,15 @@ type LogFilter struct {
 	UserID  string `json:"UserID"`
 }
 
+func simpleMiddelWare(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		fmt.Println("-- It is the simple and first middleware")
+		err := next(c)
+		return err
+	}
+
+}
+
 func logMiddleWare(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var err error
@@ -54,6 +63,7 @@ func Ping(c echo.Context) error {
 
 func main() {
 	e := echo.New()
+	e.Use(simpleMiddelWare)
 	e.Use(logMiddleWare)
 	e.GET("/ping", Ping)
 	e.Logger.Fatal(e.Start(":1234"))
